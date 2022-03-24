@@ -6,7 +6,6 @@ module GBQ
 
 using Distributions
 using Random
-using AbstractGPs
 using KernelFunctions
 using LinearAlgebra
 using Plots
