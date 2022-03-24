@@ -1,0 +1,13 @@
+[deps]
+CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
+ColorSchemes = "35d6a980-a343-548e-a6ea-1d62b119f2f4"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
+Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004"
+IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+KernelFunctions = "ec8451be-7e33-11e9-00cf-bbf324bd1392"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+Quadrature = "67601950-bd08-11e9-3c89-fd23fb4432d2"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+SymPy = "24249f21-da20-56a4-8eb1-6a02cf4ae2e6"
