@@ -149,30 +149,7 @@ exp_params = Dict([
     :λ => 1.0,
 ])
 
-res = run_once(;exp_params...)
-
-######################################## TESTING TESTING 123 ########################################
-# tester vals
-bq_z, gbq_z, xtr, ytr, krbf, krff, px, rff_px, lb, ub = run_once(;exp_params...)
-
-bq_z0 = bq_kme(xtr[1, :], px.μ, diagm([1.0, 1.0, 1.0, 1.0, 1.0]).^2, Matrix(px.Σ), lb, ub)
-gbq_z[1]
-
-scatter(xtr[:, 1], xtr[:, 2], bq_z)
-scatter!(xtr[:, 1], xtr[:, 2], -gbq_z)
-scatter(xtr[:, 1], xtr[:, 2], bq_z ./ -gbq_z)
-
-# test higher dimension estimates of the multivariate trunc term
-
-2π^(5/2) * sqrt(det(diagm([1.0, 1.0, 1.0, 1.0, 1.0]).^2))
-sqrt(det(2π * diagm([1.0, 1.0, 1.0, 1.0, 1.0]).^2))
-
-2π^(2/2) * sqrt(det(diagm([1.0, 1.0]).^2))
-sqrt(det(2π * diagm([1.0, 1.0]).^2))
-
-
-######################################## EXPERIMENT ########################################
-
+# res = run_once(;exp_params...)
 runs_per_n = 5
 res_means, res_stds, err_means, err_σ = exp_runs_over_n([10, 25, 50, 100, 250, 500, 750, 1000], runs_per_n, run_once, exp_params)
 
