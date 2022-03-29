@@ -71,13 +71,6 @@ function run_once(;
     K_rff = kernelmatrix(rffk, RowVecs(X_train))
     K_rff = add_jitter(K_rff, jitter_val)
     noisy_K_rff = K_rff + I * noise_sd^2
-    
-    #### TESTING
-    pₓ = MvNormal(μₓ, diagm(Σₓ))
-    bq_est = bayesian_quadrature(X_train, diagm(ls).^2, pₓ, noisy_K_rbf, y_train, lb, ub)
-    rff_pₓ = RandomFeatureMvGaussian(ffₖ, pₓ.μ, Matrix(pₓ.Σ), false)
-    gbq_est = gbq_gauss_μ_nd(rffk, rff_pₓ, X_train, noisy_K_rff, y_train, lb, ub)
-    return bq_est, gbq_est, X_train, y_train, noisy_K_rbf, noisy_K_rff, pₓ, rff_pₓ, lb, ub
 
     # matern
     rff_m12 = RandomFeatureKernel(ff_m12, fb, ls, λ, true)
@@ -183,4 +176,4 @@ CSV.write("experiments/ND/results/bmc_exp_means.csv", mean_df)
 CSV.write("experiments/ND/results/bmc_exp_stds.csv", std_df)
 CSV.write("experiments/ND/results/bmc_exp_err_means.csv", err_df)
 CSV.write("experiments/ND/results/bmc_exp_err_stds.csv", err_σ_df)
-CSV.write("experiments/ND/results/bmc_expdata.csv", DataFrame(data, ["x1", "x2", "y"]))
+CSV.write("experiments/ND/results/bmc_exp_data.csv", DataFrame(data, ["x1", "x2", "x3", "x4", "x5", "y"]))
