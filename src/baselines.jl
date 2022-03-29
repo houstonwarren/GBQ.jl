@@ -177,7 +177,7 @@ function bq_kme(x::Vector, μ::Vector, Σ_ls::Matrix, Σₓ::Matrix, lb::Vector,
     # calculate output
     out = pdf(normalizer, x) * posterior_trunc_term
     out = out / p_x_trunc_term
-    out = out * 2π^(n_dims/2) * sqrt(det(Σ_ls))
+    out = out * (2π)^(n_dims/2) * sqrt(det(Σ_ls))
     out = out * prod(abs.(ub .- lb))
     return out
 
