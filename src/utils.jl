@@ -1,7 +1,6 @@
 using Plots
-using HDF5
 using Printf
-using ColorSchemes
+using HDF5
 using Gadfly
 
 ######################################### GENERAL ##########################################
