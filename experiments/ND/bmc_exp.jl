@@ -74,14 +74,6 @@ function run_once(;
     K_rff = add_jitter(K_rff, jitter_val)
     noisy_K_rff = K_rff + I * noise_sd^2
 
-    ### TESTING
-    pₓ = MvNormal(μₓ, diagm(Σₓ))
-    bq_est = bayesian_quadrature(X_train, diagm(ls).^2, pₓ, noisy_K_rbf, y_train, lb, ub)
-    gbq_uni_rff = gbq_uni_nd_μ(rffk, X_train, noisy_K_rff, y_train, lb, ub)
-    rff_pₓ = RandomFeatureMvGaussian(ffₖ, pₓ.μ, Matrix(pₓ.Σ), false)
-    gbq_gauss = gbq_gauss_μ_nd(rffk, rff_pₓ, X_train, noisy_K_rff, y_train, lb, ub)
-    return X_train, y_train, rffk, noisy_K_rbf, noisy_K_rff, pₓ, rff_pₓ, bq_est, gbq_uni_rff, gbq_gauss
-
     # matern
     rff_m12 = RandomFeatureKernel(ff_m12, fb, ls, λ, true)
     K_m12 = add_jitter(kernelmatrix(rff_m12, RowVecs(X_train)), jitter_val)
@@ -152,7 +144,7 @@ exp_params = Dict([
     :λ => 1.0,
 ])
 
-res = run_once(;exp_params...)
+# res = run_once(;exp_params...)
 runs_per_n = 5
 res_means, res_stds, err_means, err_σ = exp_runs_over_n([10, 25, 50, 100, 250, 500, 750, 1000], runs_per_n, run_once, exp_params)
 
