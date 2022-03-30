@@ -13,7 +13,7 @@ end
 function n_ints_by_dim(lb::Vector, ub::Vector)
     # calculate the number of integrations over each dimension implied by vectors of bounds
     delta = ub .- lb
-    ifelse.(abs.(  delta) .> 0, 1, 0)
+    ifelse.(abs.(delta) .> 0, 1, 0)
 end
 
 function integration_bounds_and_signs(lb, ub)
@@ -37,7 +37,7 @@ end
 
 function definite_integral_uni(indefinite_int_fun, x₀, ff, lb, ub)
     bounds, signs = integration_bounds_and_signs(lb, ub)
-    
+
     integration_terms = map(
         s -> indefinite_int_fun(
             bounds[s], x₀, ff
@@ -47,17 +47,29 @@ function definite_integral_uni(indefinite_int_fun, x₀, ff, lb, ub)
     return sum(integration_terms)
 end
 
-function definite_integral_gauss(indefinite_int_fun, x₀, ff, lb, ub)
+function definite_integral_gauss(indefinite_int_fun, x₀, lb, ub)
     bounds, signs = integration_bounds_and_signs(lb, ub)
     
     integration_terms = map(
         s -> indefinite_int_fun(
-            bounds[s], x₀, ff
+            bounds[s], x₀
         ) * signs[s],
         1:length(signs)
     )  
     return sum(integration_terms)
 end
+
+# function definite_integral_gauss(indefinite_int_fun, x₀, ff, lb, ub)
+#     bounds, signs = integration_bounds_and_signs(lb, ub)
+    
+#     integration_terms = map(
+#         s -> indefinite_int_fun(
+#             bounds[s], x₀, ff
+#         ) * signs[s],
+#         1:length(signs)
+#     )  
+#     return sum(integration_terms)
+# end
 
 ########## TRIG FUNCTION INTEGRALS ###########
 # uniform KME with RFF
@@ -82,7 +94,7 @@ function indefinite_uniform_kme_func(lb, ub)
     # create variable functions, for single dimensional observation and multi-dim case
     # single dim
     function indefinite_integral(xₛ::Float64, x₀::Float64, ω::Vector)
-        α = ω * (x₀ - xₛ)
+        α = ω * (xₛ - x₀)
         out = cos_trig_func.(α) ./ ω
         out = mean(out)
         return out
@@ -100,7 +112,7 @@ function indefinite_uniform_kme_func(lb, ub)
         # t1 = t1 / (2 * prod((ω .+ ρ)))
         # t2 = t2 / (2 * prod((ω .- ρ)))
 
-        α = ω * (x₀ .- xₛ)
+        α = ω * (xₛ .- x₀)
         out = cos_trig_func.(α) ./ prod(ω, dims=2)
         out = mean(out)
         return out
@@ -287,18 +299,6 @@ function gbq_gauss_1d(rff_k, rff_px, X, K, y, lb, ub)
 end
 
 ##################### ND #####################
-function definite_integral_gauss(indefinite_int_fun, x₀, lb, ub)
-    bounds, signs = integration_bounds_and_signs(lb, ub)
-    
-    integration_terms = map(
-        s -> indefinite_int_fun(
-            bounds[s], x₀
-        ) * signs[s],
-        1:length(signs)
-    )  
-    return sum(integration_terms)
-end
-
 function gbq_gauss_kme(rff_k, rff_px, x::Vector, lb::Vector, ub::Vector)
     n_dim = length(lb)
     
@@ -310,12 +310,12 @@ function gbq_gauss_kme(rff_k, rff_px, x::Vector, lb::Vector, ub::Vector)
     trunc_term = cdf(rff_px, lb, ub)
 
     # calculate indefinite integral and make function to run over all combinations of ω and ρ
-    indefinite_integral = indefinite_gaussian_kme_func_pt(lb, ub)
+    indefinite_integral_func = indefinite_gaussian_kme_func_pt(lb, ub)
 
     function indefinite_gaussian_kme_func(xₛ::Vector, x₀::Vector)
         integrated = hcat(map(
             j -> map(
-                k -> indefinite_integral(xₛ, x₀, Ω[j, :], Ρ[k, :], rff_px.μ), 1:size(Ρ, 1)
+                k -> indefinite_integral_func(xₛ, x₀, Ω[j, :], Ρ[k, :], rff_px.μ), 1:size(Ρ, 1)
             ), 1:size(Ω, 1)
         )...)
         tbound = mean(integrated) / (sqrt(2π)^n_dim * sqrt(det(rff_px.Σ)))
