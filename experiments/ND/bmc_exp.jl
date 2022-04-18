@@ -8,11 +8,13 @@ using IterTools
 using SymPy
 using DataFrames 
 using CSV
+using CUDA
 
 ########################################## SETUP ###########################################
 global_rng = 2022
 Random.seed!(global_rng)
 n_full_data = 2500
+# CUDA.allowscalar(false)
 
 ###################################### GENERATE DATA #######################################
 function bmc_func(x1, x2, x3, x4, x5)
@@ -144,7 +146,7 @@ exp_params = Dict([
 
 # res = run_once(;exp_params...)
 runs_per_n = 5
-res_means, res_stds, err_means, err_σ = exp_runs_over_n([10, 25, 50, 100, 250, 500, 750, 1000], runs_per_n, run_once, exp_params)
+res_means, res_stds, err_means, err_σ = exp_runs_over_n([10, 25, 50, 100, 250, 500], runs_per_n, run_once, exp_params)
 
 ######################################### RESULTS ##########################################
 # results
