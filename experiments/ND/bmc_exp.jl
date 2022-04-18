@@ -89,7 +89,7 @@ function run_once(;
 
     ################# BASELINES ##################
     ### analytical
-    ## outside scope
+    analytical = quadrature(bmc_func, [0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]).u  # 12.74
 
     ### quadrature
     quad_est = quadrature(bmc_func, lb, ub, noise_sd, n_train).u
@@ -134,7 +134,7 @@ exp_params = Dict([
     :lb => [0.0, 0.0, 0.0, 0.0, 0.0],
     :ub => [1.0, 1.0, 1.0, 1.0, 1.0],
     :noise_sd => 2,
-    :rng => global_rng,
+    :rng => global_rng, 
     :jitter_val => 1e-7,
     :n_fourier_feats => 300,
     :μₓ => [0.5, 0.5, 0.5, 0.5, 0.5],
@@ -146,7 +146,7 @@ exp_params = Dict([
 
 # res = run_once(;exp_params...)
 runs_per_n = 5
-res_means, res_stds, err_means, err_σ = exp_runs_over_n([10, 25, 50, 100, 250, 500], runs_per_n, run_once, exp_params)
+res_means, res_stds, err_means, err_σ = exp_runs_over_n([10, 25, 50, 100, 250, 500, 750, 1000], runs_per_n, run_once, exp_params)
 
 ######################################### RESULTS ##########################################
 # results
@@ -170,7 +170,6 @@ err_σ_df = DataFrame(err_σ, err_nms)
 plot_labels = [
     "quad" "mc" "qmc" "bq" "gbq_uni" "gbq_uni_m12" "gbq_uni_m32" "gbq_uni_m52" "gbq_gauss" "gbq_gauss_m12" "gbq_gauss_m32" "gbq_gauss_m52"
 ]
-
 
 # save
 # save_results(mean_df, std_df, err_df, runs_per_n, "experiments/ND/bmc_exp.hdf5")
