@@ -88,7 +88,7 @@ function run_once(;
 
     ################# BASELINES ##################
     ### analytical
-    analytical = quadrature(dis5d_func, [0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]).u  # 12.74
+    analytical = quadrature(dis5d_func, [0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]).u  # 15.08
 
     ### quadrature
     quad_est = quadrature(dis5d_func, lb, ub, noise_sd, n_train).u
