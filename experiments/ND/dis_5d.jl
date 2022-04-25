@@ -41,7 +41,7 @@ X, y = generate_dis5d_data(n_full_data, [0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.
 data = hcat(X, y)
 
 # quadrature solution
-analytical = quadrature(dis5d_func, [0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]).u  # 12.74
+analytical = quadrature(dis5d_func, [0.0, 0.0, 0.0, 0.0, 0.0], [1.0, 1.0, 1.0, 1.0, 1.0]).u  # 15.08
 
 ################################## EXPERIMENT DEFINITION ###################################
 function run_once(;
@@ -171,7 +171,7 @@ plot_labels = [
 ]
 
 # save
-# save_results(mean_df, std_df, err_df, runs_per_n, "experiments/ND/bmc_exp.hdf5")
+# save_results(mean_df, std_df, err_df, runs_per_n, "experiments/ND/dis5d_exp.hdf5")
 CSV.write("experiments/ND/results/dis5d_means.csv", mean_df)
 CSV.write("experiments/ND/results/dis5d_stds.csv", std_df)
 CSV.write("experiments/ND/results/dis5d_err_means.csv", err_df)
