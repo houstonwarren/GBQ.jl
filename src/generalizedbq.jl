@@ -328,7 +328,7 @@ function gbq_gauss_kme(rff_k, rff_px, x::Vector, lb::Vector, ub::Vector)
     return integral
 end
 
-function gbq_gauss_μ_nd(rff_k, rff_px, X, K, y, lb, ub)
+function gbq_gauss_μ_nd(rff_k, rff_px, X, K, y, lb, ub) 
     # map over all x to produce z terms
     z = map(
         i -> gbq_gauss_kme(rff_k, rff_px, X[i, :], lb, ub),
