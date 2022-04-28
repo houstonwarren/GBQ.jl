@@ -143,9 +143,9 @@ end
 maxes
 
 ####### Table
-bmc_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
+bmc_cols = ["mc", "qmc", "bq", "gbq_gauss", "gbq_gauss_m32"]
 bmc_error_table = error_table(bmc_err_means, bmc_err_sd, bmc_cols)
-latexify(bmc_error_table, env=:table)
+latexify(bmc_error_table, env=:mdtable) |> print
 
 ################ 5D DISJOINT #################
 dis5d_err_means = CSV.read("experiments/ND/results/dis5d_err_means.csv", DataFrame)
@@ -155,14 +155,14 @@ dis5d_data = CSV.read("experiments/ND/results/dis5d_data.csv", DataFrame)
 ####### Calculate best methods
 maxes = []
 for row in 1:8
-    push!(maxes, findmin(bmc_err_means[row, 3:13]))
+    push!(maxes, findmin(dis5d_err_means[row, 3:13]))
 end
 maxes
 
 ####### Table
-d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
-d2d_error_table = error_table(dis2d_err_means, dis2d_err_sd, d2d_cols)
-latexify(d2d_error_table, env=:table)
+d5d_cols = ["mc", "qmc", "bq", "gbq_gauss", "gbq_gauss_m32"]
+d5d_error_table = error_table(dis5d_err_means, dis5d_err_sd, d5d_cols)
+latexify(d5d_error_table, env=:mdtable) |> print
 
 
 #################### 10D #####################
@@ -178,6 +178,6 @@ end
 maxes
 
 ####### Table
-d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
-d2d_error_table = error_table(dis2d_err_means, dis2d_err_sd, d2d_cols)
-latexify(d2d_error_table, env=:table)
+morokoff_cols = ["mc", "qmc", "bq", "gbq_gauss", "gbq_gauss_m52"]
+morokoff_error_table = error_table(morokoff_err_means, morokoff_err_sd, morokoff_cols)
+latexify(morokoff_error_table, env=:mdtable) |> print
