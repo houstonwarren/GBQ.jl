@@ -135,8 +135,22 @@ bmc_err_means = CSV.read("experiments/ND/results/bmc_exp_err_means.csv", DataFra
 bmc_err_sd = CSV.read("experiments/ND/results/bmc_exp_err_stds.csv", DataFrame)
 bmc_data = CSV.read("experiments/ND/results/bmc_exp_data.csv", DataFrame)
 
-####### Error Plot
-bmc_sum = full_error_df(bmc_err_means, bmc_err_sd)
+####### Calculate best methods
+maxes = []
+for row in 1:8
+    push!(maxes, findmin(bmc_err_means[row, 3:13]))
+end
+maxes
+
+####### Table
+bmc_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
+bmc_error_table = error_table(bmc_err_means, bmc_err_sd, bmc_cols)
+latexify(bmc_error_table, env=:table)
+
+################ 5D DISJOINT #################
+dis5d_err_means = CSV.read("experiments/ND/results/dis5d_err_means.csv", DataFrame)
+dis5d_err_sd = CSV.read("experiments/ND/results/dis5d_err_stds.csv", DataFrame)
+dis5d_data = CSV.read("experiments/ND/results/dis5d_data.csv", DataFrame)
 
 ####### Calculate best methods
 maxes = []
@@ -150,12 +164,20 @@ d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
 d2d_error_table = error_table(dis2d_err_means, dis2d_err_sd, d2d_cols)
 latexify(d2d_error_table, env=:table)
 
-################ 5D DISJOINT #################
-dis5d_err_means = CSV.read("experiments/ND/results/dis5d_err_means.csv", DataFrame)
-dis5d_err_sd = CSV.read("experiments/ND/results/dis5d_err_stds.csv", DataFrame)
-dis5d_data = CSV.read("experiments/ND/results/dis5d_data.csv", DataFrame)
 
 #################### 10D #####################
 morokoff_err_means = CSV.read("experiments/ND/results/morokoff_err_means.csv", DataFrame)
 morokoff_err_sd = CSV.read("experiments/ND/results/morokoff_err_stds.csv", DataFrame)
 morokoff_data = CSV.read("experiments/ND/results/morokoff_data.csv", DataFrame)
+
+####### Calculate best methods
+maxes = []
+for row in 1:6
+    push!(maxes, findmin(morokoff_err_means[row, 3:13]))
+end
+maxes
+
+####### Table
+d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
+d2d_error_table = error_table(dis2d_err_means, dis2d_err_sd, d2d_cols)
+latexify(d2d_error_table, env=:table)
