@@ -1,4 +1,4 @@
-using Distributions
+   using Distributions
 using Quadrature
 
 ################################### NUMERICAL QUADRATURE ###################################
@@ -120,6 +120,25 @@ function mc_quadrature(f, lb::Vector, ub::Vector, n_samples, noise_sd=0.0, rng=n
     σ = std(fx) / sqrt(n_samples)
 
     return μ, σ
+end
+
+function mc_quadrature_z(X, kernel, measure, lb, ub, n_samples)
+    samples = rand(measure, n_samples)
+    samples = samples[:, all(lb .< samples  .< ub, dims=1)[1, :]]
+
+    if size(samples, 2) < n_samples
+        diff = n_samples - size(samples, 2)
+        more_samples = rand(measure, diff * 10)
+        more_samples = more_samples[:, all(lb .< more_samples  .< ub, dims=1)[1, :]]
+        samples = hcat((samples, more_samples[:, 1:diff])...)
+    end
+
+    print(typeof(X))
+
+    km = kernelmatrix(kernel, X, ColVecs(samples))
+    expectations = mean(km, dims=2) .* prod(abs.(ub .- lb))
+
+    return expectations[:, 1]
 end
 
 ############################### GAUSSIAN BAYESIAN QUADRATURE ###############################
