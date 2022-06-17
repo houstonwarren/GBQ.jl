@@ -8,9 +8,10 @@ using CUDA
 mutable struct RandomFeatureKernel{T} <: KernelFunctions.Kernel
     ω::T  # matrix of spectral frequencies
     β::T  # vector of kernel bias
-    σ::T  # vector of kernel LS
+    σ::T  # vector of kernel LS - this is in squared form
     λ::T  # vector of kernel variance
     sin_feats:: Bool
+    RandomFeatureKernel{T}(ω, β, σ, λ, sin_feats) where {T} = new(deepcopy(ω), deepcopy(β), deepcopy(σ), deepcopy(λ), deepcopy(sin_feats))
 end
 
 ######################################## PROJECTION ########################################

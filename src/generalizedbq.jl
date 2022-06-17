@@ -518,8 +518,7 @@ function gaussian_rff_kernel_mean(X, kernel, measure, lb, ub, sin_feats=false)
     # end
     
     # normalization constant
-    # trunc_term = cdf(measure, lb, ub)
-    trunc_term = 0.14829144308886272
+    trunc_term = cdf(measure, lb, ub)
     L = kernel.λ * prod(abs.(ub .- lb)) ./ trunc_term
     L = L ./ (sqrt(2π)^d * sqrt(det(measure.Σ)))
     if sin_feats
@@ -592,6 +591,7 @@ end
 
 mutable struct UniformGBQ
     kernel::RandomFeatureKernel
+    noise_sd::Float64
     lb::AbstractVector
     ub::AbstractVector
 end
@@ -606,6 +606,7 @@ function (gbq_model::UniformGBQ)(X::AbstractVector, y)
     sin_kernel = deepcopy(kernel)
     sin_kernel.sin_feats = true
     K = sin_kernel(X)
+    K = K + I * gbq_model.noise_sd[1]^2
 
     # run gbq
     z = uniform_rff_kernel_mean(X, kernel, lb, ub, sin_feats)
@@ -626,6 +627,7 @@ function (gbq_model::UniformGBQ)(X::AbstractMatrix, y)
     sin_kernel = deepcopy(kernel)
     sin_kernel.sin_feats = true
     K = add_jitter(kernelmatrix(sin_kernel, ColVecs(X)), 1e-7)
+    K = K + I * gbq_model.noise_sd^2
 
     # run gbq
     z = uniform_rff_kernel_mean(X, kernel, lb, ub, sin_feats)
@@ -639,6 +641,7 @@ end
 mutable struct GaussianGBQ
     kernel::RandomFeatureKernel
     measure
+    noise_sd::Float64
 end
 
 function (gbq_model::GaussianGBQ)(X::AbstractVector, y, lb::AbstractVector, ub::AbstractVector)
@@ -650,7 +653,7 @@ function (gbq_model::GaussianGBQ)(X::AbstractVector, y, lb::AbstractVector, ub::
     # make cleaned sin feats kernel matrix
     sin_kernel = deepcopy(kernel)
     sin_kernel.sin_feats = true
-    K = sin_kernel(X)
+    K = sin_kernel(X) + I * gbq_model.noise_sd^2
 
     # run gbq
     z = gaussian_rff_kernel_mean(X, kernel, measure, lb, ub, sin_feats)
@@ -671,6 +674,7 @@ function (gbq_model::GaussianGBQ)(X::AbstractMatrix, y, lb::AbstractVector, ub::
     sin_kernel = deepcopy(kernel)
     sin_kernel.sin_feats = true
     K = add_jitter(kernelmatrix(sin_kernel, ColVecs(X)), 1e-7)
+    K = K + I * gbq_model.noise_sd^2
     
     # run gbq
     z = gaussian_rff_kernel_mean(X, kernel, measure, lb, ub, sin_feats)

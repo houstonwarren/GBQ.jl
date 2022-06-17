@@ -53,94 +53,6 @@ function verify_invertible(K::Matrix, tolerance)
     end
 end
 
-####################################### EXPERIMENTS ########################################
-function generate_data(f, n, lb, ub, noise_sd=0.0, rng=nothing)
-    X, y = f(n, lb, ub, rng)
-
-    if noise_sd > 0.0
-        if isnothing(rng)
-            y = y .+ rand(Normal(0, noise_sd), n)
-        else
-            y = y .+ rand(MersenneTwister(rng), Normal(0, noise_sd), n)
-        end
-    end
-
-    return X, y
-end
-
-function partition_data(X, y, n_train, rng, noise_sd=0.0)
-    # full data
-    
-    # train/test data
-    train_pct = n_train / size(X, 1)
-    X_train, X_test = MLJ.partition(X, train_pct, rng=rng, shuffle=true)
-    y_train, y_test = MLJ.partition(y, train_pct, rng=rng, shuffle=true)
-
-    if noise_sd > 0.0
-        y_train = y_train .+ rand(Normal(0, noise_sd), n_train)
-    end
-
-    return X_train, y_train, X_test, y_test
-end
-
-function exp_repeated_runs(n_reps, exp_function, params, verbose=false)
-    rngs = rand(MersenneTwister(params[:rng]), 1:100, n_reps)
-    run_params = copy(params)
-    
-    full_results = []
-    for run in 1:n_reps
-        if verbose
-            print(run, "\n")
-        end
-        run_params[:rng] = rngs[run]
-        results = exp_function(;run_params...)
-        push!(full_results, results)
-    end
-
-    full_results = convert.(Float64, Array(hcat(full_results...)'))
-    return full_results
-end
-
-function exp_runs_over_n(ns, n_reps, exp_function, params, verbose=false)
-    n_res_means = []
-    n_res_stds = []
-    n_res_errs = []
-    n_res_errs_σ = []
-    for n in ns
-        print(n, "\n")
-        
-        # update params
-        params_n = copy(params)
-        params_n[:n_train] = n
-        
-        # run
-        n_res = exp_repeated_runs(n_reps, exp_function, params_n, verbose)
-        
-        # values
-        n_res_mean = mean(n_res, dims=1)[1, :]
-        n_res_std = std(n_res, dims=1)[1, :]
-
-        # errors
-        true_val = n_res[1, 1]
-        preds = n_res[:, 2:size(n_res, 2)]
-        errs = pct_error(true_val, preds)
-        err_means = mean(errs, dims=1)[1, :]
-        err_stds = std(errs, dims=1)[1, :]
-
-        # add to df
-        push!(n_res_means, vcat(n, n_res_mean))
-        push!(n_res_stds, vcat(n, n_res_std))
-        push!(n_res_errs, vcat(n, err_means))
-        push!(n_res_errs_σ, vcat(n, err_stds))
-
-    end
-    n_res_means = Array(hcat(n_res_means...)')
-    n_res_stds = Array(hcat(n_res_stds...)')
-    n_res_errs = Array(hcat(n_res_errs...)')
-    n_res_errs_σ = Array(hcat(n_res_errs_σ...)')
-    return n_res_means, n_res_stds, n_res_errs, n_res_errs_σ
-end
-
 ######################################## EVALUATION ########################################
 function pct_error(true_val, pred)
     return abs((true_val - pred) / true_val) * 100
@@ -148,6 +60,14 @@ end
 
 function pct_error(true_val::Float64, preds::Matrix)
     return abs.((true_val .- preds) ./ true_val) .* 100
+end
+
+function mse(true_val::AbstractVector, preds::AbstractVector)
+    return mean(((true_val .- preds)).^2)
+end
+
+function mae(true_val::AbstractVector, preds::AbstractVector)
+    return mean(abs.((true_val .- preds)))
 end
 
 function error_df(preds, nms)
