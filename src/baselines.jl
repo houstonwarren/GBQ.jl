@@ -1,6 +1,24 @@
    using Distributions
 using Quadrature
 
+###################################### KME BASELINES #######################################
+function mc_quadrature_kme(X, kernel, measure, lb, ub, n_samples)
+    samples = rand(measure, n_samples)
+    samples = samples[:, all(lb .< samples  .< ub, dims=1)[1, :]]
+
+    if size(samples, 2) < n_samples
+        diff = n_samples - size(samples, 2)
+        more_samples = rand(measure, diff * 10)
+        more_samples = more_samples[:, all(lb .< more_samples  .< ub, dims=1)[1, :]]
+        samples = hcat((samples, more_samples[:, 1:diff])...)
+    end
+
+    km = kernelmatrix(kernel, X, ColVecs(samples))
+    expectations = mean(km, dims=2) .* prod(abs.(ub .- lb))
+
+    return expectations[:, 1]
+end
+
 ################################### NUMERICAL QUADRATURE ###################################
 function quadrature(f, st, stp, noise_sd=0.0, maxiters=nothing, rng=nothing)
     
@@ -24,15 +42,29 @@ function quadrature(f, st, stp, noise_sd=0.0, maxiters=nothing, rng=nothing)
         quad_int = solve(prob, HCubatureJL(), maxiters=maxiters)
     end
 
-    return quad_int
+    return quad_int.u
 end
 
 ####################################### MONTE CARLO ########################################
+function mc_quadrature_with_outputs(y::AbstractVector, lb::AbstractVector, ub::AbstractVector)
+    # area
+    n_samples = size(y, 1)
+    area = prod(abs.(ub .- lb))
+
+    # mean
+    μ = mean(y) * area
+
+    # variance
+    σ = std(y) / sqrt(n_samples)
+
+    return μ, σ
+end
+
 function mc_quadrature_with_data(f, lb, ub, pts, noise_sd=0.0, rng=nothing)
-    n_samples = size(pts, 1)
+    n_samples = size(pts, 2)
     
     # generate samples
-    fx = map(i -> f(pts[i, :]...), 1:n_samples)
+    fx = map(i -> f(pts[:, i]...), 1:n_samples)
 
     if noise_sd > 0.0
         if isnothing(rng)
@@ -52,9 +84,9 @@ function mc_quadrature_with_data(f, lb, ub, pts, noise_sd=0.0, rng=nothing)
 end
 
 function mc_quadrature_with_data(f, lb::Vector, ub::Vector, pts::Matrix, noise_sd=0.0, rng=nothing)
-    n_samples = size(pts, 1)
+    n_samples = size(pts, 2)
     
-    fx = map(i -> f(pts[i, :]...), 1:n_samples)
+    fx = map(i -> f(pts[:, i]...), 1:n_samples)
     
     if noise_sd > 0.0
         if isnothing(rng)
@@ -79,7 +111,7 @@ end
 function mc_quadrature(f, lb, ub, n_samples, noise_sd=0.0, rng=nothing)
     # generate samples
     mc_pts = convert(Array, LinRange(lb, ub, n_samples))
-    fx = f(mc_pts)
+    fx = f.(mc_pts)
 
     if noise_sd > 0.0
         if isnothing(rng)
@@ -99,8 +131,8 @@ function mc_quadrature(f, lb, ub, n_samples, noise_sd=0.0, rng=nothing)
 end
 
 function mc_quadrature(f, lb::Vector, ub::Vector, n_samples, noise_sd=0.0, rng=nothing)
-    mc_pts = sample_uniform_grid(n_samples, lb, ub)
-    fx = map(i -> f(mc_pts[i, :]...), 1:n_samples)
+    mc_pts = Matrix(sample_uniform_grid(n_samples, lb, ub)')
+    fx = map(i -> f(mc_pts[:, i]...), 1:n_samples)
     
     if noise_sd > 0.0
         if isnothing(rng)
@@ -120,25 +152,6 @@ function mc_quadrature(f, lb::Vector, ub::Vector, n_samples, noise_sd=0.0, rng=n
     σ = std(fx) / sqrt(n_samples)
 
     return μ, σ
-end
-
-function mc_quadrature_z(X, kernel, measure, lb, ub, n_samples)
-    samples = rand(measure, n_samples)
-    samples = samples[:, all(lb .< samples  .< ub, dims=1)[1, :]]
-
-    if size(samples, 2) < n_samples
-        diff = n_samples - size(samples, 2)
-        more_samples = rand(measure, diff * 10)
-        more_samples = more_samples[:, all(lb .< more_samples  .< ub, dims=1)[1, :]]
-        samples = hcat((samples, more_samples[:, 1:diff])...)
-    end
-
-    print(typeof(X))
-
-    km = kernelmatrix(kernel, X, ColVecs(samples))
-    expectations = mean(km, dims=2) .* prod(abs.(ub .- lb))
-
-    return expectations[:, 1]
 end
 
 ############################### GAUSSIAN BAYESIAN QUADRATURE ###############################
@@ -203,7 +216,7 @@ function bq_kme(x::Vector, μ::Vector, Σ_ls::Matrix, Σₓ::Matrix, lb::Vector,
 end
 
 function bayesian_quadrature(x, Σ_ls, x_dist::MvNormal, K, y, lb, ub)
-    z = map(i -> bq_kme(x[i, :], x_dist.μ, Σ_ls, Matrix(x_dist.Σ), lb, ub), 1:size(x, 1))
+    z = map(i -> bq_kme(x[:, i], x_dist.μ, Σ_ls, Matrix(x_dist.Σ), lb, ub), 1:size(x, 2))
     μ = z' * inv(K) * y
     return μ
 end

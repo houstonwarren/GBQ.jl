@@ -10,7 +10,7 @@ mutable struct RandomFeatureKernel{T} <: KernelFunctions.Kernel
     β::T  # vector of kernel bias
     σ::T  # vector of kernel LS - this is in squared form
     λ::T  # vector of kernel variance
-    sin_feats:: Bool
+    sin_feats::Bool
     RandomFeatureKernel{T}(ω, β, σ, λ, sin_feats) where {T} = new(deepcopy(ω), deepcopy(β), deepcopy(σ), deepcopy(λ), deepcopy(sin_feats))
 end
 

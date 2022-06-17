@@ -10,18 +10,25 @@ using Random
 using LinearAlgebra
 
 ################################ DATA GENERATION AND SPLITS ################################
-function generate_data(f, n, lb, ub, noise_sd=0.0, rng=nothing)
-    X, y = f(n, lb, ub, rng)
+function generate_experimental_data(f, n, lb, ub, noise_sd=0.0, rng=nothing)
+    n_dim = length(lb)
+    dim_delta = ub - lb
+    halton_samples = halton_sampler(n, n_dim, rng)
+    deltas = halton_samples .* dim_delta
+    X = deltas .+ lb 
+    X = ifelse.(X .== 0.0, 1e-5, X)
+    y = map(i -> f(X[:, i]...), 1:size(X, 2))
 
     if noise_sd > 0.0
         if isnothing(rng)
-            y = y .+ rand(Normal(0, noise_sd), n)
+            y_noisy = y .+ rand(Normal(0, noise_sd), n)
         else
-            y = y .+ rand(MersenneTwister(rng), Normal(0, noise_sd), n)
+            y_noisy = y .+ rand(MersenneTwister(rng), Normal(0, noise_sd), n)
         end
+        return X, y, y
+    else
+        return X, y, y
     end
-
-    return X, y
 end
 
 function partition_data(X, y, n_train, rng, noise_sd=0.0)
@@ -118,12 +125,12 @@ function experiment(;
     μₓ, Σₓ,  # measure distribution init
     analytical_sol,
     trainable_params_func,  # func that takes k and returns tuple of trainable params
-    true_func, data_gen_func,
+    true_func,
     opt_params, opt_steps,
     rng)
     
     ############### GENERATE DATA ################
-    X_train, y_train = generate_data(data_gen_func, n_train, lb, ub, noise_sd[1], rng)
+    X_train, y_true, y_train = generate_experimental_data(true_func, n_train, lb, ub, noise_sd[1], rng)
 
     ############# GENERATE FEATURES ##############
     dim = length(lb)
@@ -135,22 +142,22 @@ function experiment(;
     # rbf_training_params = Flux.params(trainable_params_func(rbf_training))
     rbf_training_params = Flux.params(rbf_training.σ)
     train_gp!(opt, rbf_training, rbf_training_params, X_train, y_train, log.(noise_sd), opt_steps)
-    ls_trained = deepcopy(exp.(rbf_training))  # finalized values
+    ls_trained = deepcopy(1 ./ exp.(rbf_training.σ))  # finalized values
 
     ############### CREATE KERNELS ###############
     # baseline rbf
-    k_rbf = λ_init[1] * (SqExponentialKernel() ∘ ARDTransform(ls_trained))
+    k_rbf = λ_init[1] * (SqExponentialKernel() ∘ ARDTransform(1 ./ ls_trained))
     K_rbf = kernelmatrix(k_rbf, ColVecs(X_train))
     K_rbf = add_jitter(K_rbf, jitter_val)
     noisy_K_rbf = K_rbf + I * noise_sd[1]^2
     
     # gaussian rff
-    rffk = RandomFeatureKernel{AbstractVector}(ff, fb, ls_trained, λ_init, sin_feats)
+    rffk = RandomFeatureKernel{AbstractArray}(ff, fb, ls_trained, λ_init, sin_feats)
 
     # matern
-    rff_m12 = RandomFeatureKernel(ff_m12, fb, ls_trained, λ_init, sin_feats)
-    rff_m32 = RandomFeatureKernel(ff_m32, fb, ls_trained, λ_init, sin_feats)
-    rff_m52 = RandomFeatureKernel(ff_m52, fb, ls_trained, λ_init, sin_feats)
+    rff_m12 = RandomFeatureKernel{AbstractArray}(ff_m12, fb, ls_trained, λ_init, sin_feats)
+    rff_m32 = RandomFeatureKernel{AbstractArray}(ff_m32, fb, ls_trained, λ_init, sin_feats)
+    rff_m52 = RandomFeatureKernel{AbstractArray}(ff_m52, fb, ls_trained, λ_init, sin_feats)
 
     # # parametric
     # rff_parametric = RandomFeatureKernel(ff, fb, ls_init, λ_init, sin_feats)
@@ -158,17 +165,18 @@ function experiment(;
 
     ################# BASELINES ##################
     ### quadrature
-    quad_est = quadrature(true_func, lb, ub, noise_sd[1], n_train)
+    quad_est = quadrature(true_func, lb, ub, noise_sd[1], n_train)  # noisy quadrature
 
     ### mc integration
-    # mc_est, mc_sd = mc_quadrature(bmc_func, lb, ub, n_train, noise_sd, rng)
+    mc_est, mc_sd = mc_quadrature(true_func, lb, ub, n_train, noise_sd[1], rng)
 
     # quasi mc integration
-    # qmc_est, qmc_sd = mc_quadrature_with_data(bmc_func, lb, ub, X_train, noise_sd, rng)
+    # qmc_est, qmc_sd = mc_quadrature_with_data(bmc_func, lb, ub, X_train, noise_sd[1], rng)
+    qmc_est, qmc_sd = mc_quadrature_with_outputs(y_train, lb, ub)
 
     ## bq
     pₓ = MvNormal(μₓ, diagm(Σₓ))
-    # bq_est = bayesian_quadrature(X_train, diagm(ls).^2, pₓ, noisy_K_rbf, y_train, lb, ub)
+    bq_est = bayesian_quadrature(X_train, diagm(ls_trained).^2, pₓ, noisy_K_rbf, y_train, lb, ub)
 
     #################### gbq #####################
     ### uniform
@@ -183,27 +191,21 @@ function experiment(;
     gbq_m12 = GaussianGBQ(rff_m12, rff_pₓ, noise_sd[1])(X_train, y_train, lb, ub)
     gbq_m32 = GaussianGBQ(rff_m32, rff_pₓ, noise_sd[1])(X_train, y_train, lb, ub)
     gbq_m52 = GaussianGBQ(rff_m52, rff_pₓ, noise_sd[1])(X_train, y_train, lb, ub)
-    
+
     ################## RESULTS ###################
-    # results = [
-    #     analytical_sol, quad_est, mc_est, qmc_est, bq_est,
-    #     gbq_uni_rff, gbq_uni_m12, gbq_uni_m32, gbq_uni_m52,
-    #     gbq_gauss, gbq_m12, gbq_m32, gbq_m52
-    # ]
     results = [
-        analytical_sol,
+        analytical_sol, quad_est, mc_est, qmc_est, bq_est,
         gbq_uni_rff, gbq_uni_m12, gbq_uni_m32, gbq_uni_m52,
         gbq_gauss, gbq_m12, gbq_m32, gbq_m52
     ]
     print(results, "\n")
     return results
-
 end
 
 ################################### REPEATED EXPERIMENTS ###################################
-function exp_repeated_runs(n_reps, exp_function, params, verbose=false)
+function exp_repeated_runs(n_reps, params, verbose=false)
     rngs = rand(MersenneTwister(params[:rng]), 1:100, n_reps)
-    run_params = copy(params)
+    run_params = deepcopy(params)
     
     full_results = []
     for run in 1:n_reps
@@ -211,7 +213,7 @@ function exp_repeated_runs(n_reps, exp_function, params, verbose=false)
             print(run, "\n")
         end
         run_params[:rng] = rngs[run]
-        results = exp_function(;run_params...)
+        results = experiment(;run_params...)
         push!(full_results, results)
     end
 
@@ -219,9 +221,8 @@ function exp_repeated_runs(n_reps, exp_function, params, verbose=false)
     return full_results
 end
 
-
 ############################## REPEATED EXPERIMENTS ACROSS N ###############################
-function exp_runs_over_n(ns, n_reps, exp_function, params, verbose=false)
+function exp_runs_over_n(ns, n_reps, params, verbose=false)
     n_res_means = []
     n_res_stds = []
     n_res_errs = []
@@ -234,7 +235,7 @@ function exp_runs_over_n(ns, n_reps, exp_function, params, verbose=false)
         params_n[:n_train] = n
         
         # run
-        n_res = exp_repeated_runs(n_reps, exp_function, params_n, verbose)
+        n_res = exp_repeated_runs(n_reps, params_n, verbose)
         
         # values
         n_res_mean = mean(n_res, dims=1)[1, :]
@@ -260,4 +261,3 @@ function exp_runs_over_n(ns, n_reps, exp_function, params, verbose=false)
     n_res_errs_σ = Array(hcat(n_res_errs_σ...)')
     return n_res_means, n_res_stds, n_res_errs, n_res_errs_σ
 end
-

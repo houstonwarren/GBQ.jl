@@ -38,7 +38,7 @@ function definite_integral_uni(indefinite_int_fun, x₀, ff, lb, ub)
             bounds[s], x₀, ff
         ) * signs[s],
         1:length(signs)
-    )  
+    )
     return sum(integration_terms)
 end
 
