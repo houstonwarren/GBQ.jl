@@ -4,8 +4,6 @@ using KernelFunctions
 using LinearAlgebra
 
 ##################################### HELPER FUNCTIONS #####################################
-### 
-
 function fourier_feats_cartesian_product(ω, ρ)
     ωρ = map(ρ_ -> map(ω_ -> [ω_, ρ_], ColVecs(ω)), ColVecs(ρ))
     ωρ = hcat(hcat.(ωρ...)...)  # first row is kernel.ω, second row measure.ρ
@@ -138,7 +136,7 @@ function uniform_rff_kernel_mean(X, kernel, lb, ub, sin_feats=false)
     return sum(L .* out, dims=1)[1, :]
 end
 
-### STRUCT
+################### STRUCT ###################
 mutable struct UniformGBQ
     kernel::RandomFeatureKernel
     noise_sd::Float64
@@ -310,7 +308,7 @@ function gaussian_rff_kernel_mean(X, kernel, measure, lb, ub, sin_feats=false)
     return out
 end
 
-########## STRUCT
+################### STRUCT ###################
 mutable struct GaussianGBQ
     kernel::RandomFeatureKernel
     measure

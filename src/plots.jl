@@ -18,7 +18,6 @@ err_nms = [
 ]
 
 ##################################### PAPER PLOT 1: 1D #####################################
-
 ################## POLY 1D ###################
 poly1d_data = CSV.read("experiments/1D/results/poly_1d_data.csv", DataFrame)
 poly1d_err_sd = CSV.read("experiments/1D/results/poly_1d_err_stds.csv", DataFrame)
@@ -116,7 +115,7 @@ dis_2d_sum = full_error_df(dis2d_err_means, dis2d_err_sd)
 pos = [3, 2.5]
 labels = ["QMC", "GBQ-U w/ Matern 3/2", "GBQ-G w/ RBF", "GBQ-G w/ Matern 5/2"]
 columns = ["qmc", "sbq_uni_m32", "sbq_gauss", "sbq_gauss_m52"]
-poly_2d_err_plot = final_err_plot(poly_2d_sum, "thing", pos,labels, columns)
+poly_2d_err_plot = final_err_plot(poly_2d_sum, pos,labels, columns)
 
 maxes = []
 for row in 1:8
@@ -129,7 +128,7 @@ d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
 d2d_error_table = error_table(dis2d_err_means, dis2d_err_sd, d2d_cols)
 latexify(d2d_error_table, env=:table)
 
-################################### 5D & 10D EXPERIMENTS ###################################
+###################################### 5D EXPERIMENTS ######################################
 ##################### 5D #####################
 bmc_err_means = CSV.read("experiments/ND/results/bmc_exp_err_means.csv", DataFrame)
 bmc_err_sd = CSV.read("experiments/ND/results/bmc_exp_err_stds.csv", DataFrame)
@@ -137,15 +136,22 @@ bmc_data = CSV.read("experiments/ND/results/bmc_exp_data.csv", DataFrame)
 
 ####### Calculate best methods
 maxes = []
-for row in 1:8
+for row in 1:13
     push!(maxes, findmin(bmc_err_means[row, 3:13]))
 end
 maxes
 
+####### Error Plot
+bmc_sum = full_error_df(bmc_err_means, bmc_err_sd, true, true)
+pos = [6, 10]
+labels = ["MC", "BQ w/ RBF", "GBQ-U w/ RBF", "GBQ-G w/ RBF"]
+columns = ["mc", "bq", "gbq_uni", "gbq_gauss"]
+bmc_err_plot = final_err_plot(bmc_sum, "thing", pos, labels, columns, true, true)
+
 ####### Table
-bmc_cols = ["mc", "qmc", "bq", "gbq_gauss", "gbq_gauss_m32"]
+bmc_cols = ["mc", "bq", "gbq_uni", "gbq_gauss"]
 bmc_error_table = error_table(bmc_err_means, bmc_err_sd, bmc_cols)
-latexify(bmc_error_table, env=:mdtable) |> print
+latexify(bmc_error_table, env=:table)
 
 ################ 5D DISJOINT #################
 dis5d_err_means = CSV.read("experiments/ND/results/dis5d_err_means.csv", DataFrame)
@@ -162,10 +168,9 @@ maxes
 ####### Table
 d5d_cols = ["mc", "qmc", "bq", "gbq_gauss", "gbq_gauss_m32"]
 d5d_error_table = error_table(dis5d_err_means, dis5d_err_sd, d5d_cols)
-latexify(d5d_error_table, env=:mdtable) |> print
+latexify(d5d_error_table, env=:table)
 
-
-#################### 10D #####################
+###################################### 10D EXPERIMENT ######################################
 morokoff_err_means = CSV.read("experiments/ND/results/morokoff_err_means.csv", DataFrame)
 morokoff_err_sd = CSV.read("experiments/ND/results/morokoff_err_stds.csv", DataFrame)
 morokoff_data = CSV.read("experiments/ND/results/morokoff_data.csv", DataFrame)

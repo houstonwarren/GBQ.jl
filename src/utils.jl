@@ -82,23 +82,33 @@ function error_df(preds, nms)
     return err_df
 end
 
-function confidence_bounds(err_means, err_sds)
+function confidence_bounds(err_means, err_sds, logy=false)
     n_cols = size(err_means, 2)
     ns = err_means[:, 1]
-    upper_vals = err_means[:, 2:n_cols] .+ err_sds[:, 2:n_cols] .* 1.95
-    lower_vals = err_means[:, 2:n_cols] .- err_sds[:, 2:n_cols] .* 1.95
-    lower_vals = ifelse.(lower_vals .< 0, 0, lower_vals)
-    upper_vals = ifelse.(upper_vals .< 0, 0, upper_vals)
+
+    if logy
+        err_sd_frame = log.(err_sds[:, 2:n_cols])
+        err_mu_frame = log.(err_means[:, 2:n_cols])
+        upper_vals = err_mu_frame .+ err_sd_frame .* 1.95
+        lower_vals = err_mu_frame .- err_sd_frame .* 1.95
+    else
+        err_sd_frame = err_sds[:, 2:n_cols]
+        err_mu_frame = err_means[:, 2:n_cols]
+        upper_vals = err_mu_frame .+ err_sd_frame .* 1.95
+        lower_vals = err_mu_frame .- err_sd_frame .* 1.95
+        lower_vals = ifelse.(lower_vals .< 0, 0, lower_vals)
+        upper_vals = ifelse.(upper_vals .< 0, 0, upper_vals)
+    end
+
     lower_vals = hcat(ns, lower_vals)
     upper_vals = hcat(ns, upper_vals)
-
     rename!(lower_vals, :x1 => "n")
     rename!(upper_vals, :x1 => "n")
     return lower_vals, upper_vals
 end
 
-function full_error_df(err_means, err_sds)
-    lower_errs, upper_errs = confidence_bounds(err_means, err_sds)
+function full_error_df(err_means, err_sds, logx=false, logy=false)
+    lower_errs, upper_errs = confidence_bounds(err_means, err_sds, logy)
     
     # reshape and rename
     err_means = stack(err_means, 2:13)
@@ -111,6 +121,12 @@ function full_error_df(err_means, err_sds)
     # join
     errs = innerjoin(err_means, lower_errs, on =[:n, :model])
     errs = innerjoin(errs, upper_errs, on =[:n, :model])
+    if logx
+        errs[!, :n] = log.(errs[!, :n])
+    end
+    if logy
+        errs[!, :μ] = log.(errs[!, :μ])
+    end
     return errs
 end
 
@@ -152,43 +168,88 @@ function disjoint_1d_func(df, split)
     return p
 end
 
-function final_err_plot(err, title, position, labels=nothing, columns=nothing)
+function final_err_plot(err, title, position, labels=nothing, columns=nothing, logx=false, logy=false)
     if !isnothing(columns)
         err = filter(row -> row.model ∈ columns, err)
     end
 
-    if !isnothing(labels)
-        p = Gadfly.plot(
-            err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
-            Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
-            Guide.title(nothing), style(line_width=3mm),
-            Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "sienna2"),
-            Guide.colorkey(title="", labels=labels, pos=position),
-            Guide.xlabel("N Training Data"),
-            Guide.ylabel("% Error vs. Analytical"),
-            Theme(major_label_font="CMU Serif",
-                minor_label_font="CMU Serif",
-                key_label_font="CMU Serif",
-                major_label_font_size=8pt,minor_label_font_size=6pt,
-                key_label_font_size=7.25pt
-            )
-        )
+    if logx
+        x_label = "N Training Data (log)"
     else
-        p = Gadfly.plot(
-            err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
-            Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
-            Guide.title(nothing), style(line_width=2mm),
-            Guide.colorkey(title="", pos=position),
-            Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "sienna2"),
-            Guide.xlabel("N Training Data"),
-            Guide.ylabel("% Error vs. Analytical"),
-            Theme(major_label_font="CMU Serif",
-                minor_label_font="CMU Serif",
-                key_label_font="CMU Serif",
-                major_label_font_size=8pt, minor_label_font_size=6pt,
-                key_label_font_size=7.25pt
+        x_label = "N Training Data"
+    end
+
+    if logy
+        y_label = "Mean % Error vs. Analytical (log)"
+        if !isnothing(labels)
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model,
+                Geom.point, Geom.line, alpha=[0.5],
+                Guide.title(nothing), style(line_width=3mm),
+                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Guide.colorkey(title="", labels=labels, pos=position),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(major_label_font="CMU Serif",
+                    minor_label_font="CMU Serif",
+                    key_label_font="CMU Serif",
+                    major_label_font_size=8pt,minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
             )
-        )
+        else
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model,
+                Geom.point, Geom.line, alpha=[0.5],
+                Guide.title(nothing), style(line_width=2mm),
+                Guide.colorkey(title="", pos=position),
+                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(major_label_font="CMU Serif",
+                    minor_label_font="CMU Serif",
+                    key_label_font="CMU Serif",
+                    major_label_font_size=8pt, minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
+            )
+        end
+    
+    else
+        y_label = "Mean % Error vs. Analytical"
+        if !isnothing(labels)
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
+                Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
+                Guide.title(nothing), style(line_width=3mm),
+                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Guide.colorkey(title="", labels=labels, pos=position),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(major_label_font="CMU Serif",
+                    minor_label_font="CMU Serif",
+                    key_label_font="CMU Serif",
+                    major_label_font_size=8pt,minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
+            )
+        else
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
+                Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
+                Guide.title(nothing), style(line_width=2mm),
+                Guide.colorkey(title="", pos=position),
+                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(major_label_font="CMU Serif",
+                    minor_label_font="CMU Serif",
+                    key_label_font="CMU Serif",
+                    major_label_font_size=8pt, minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
+            )
+        end
     end
     return p
 end
