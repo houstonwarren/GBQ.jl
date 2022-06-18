@@ -47,15 +47,6 @@ function partition_data(X, y, n_train, rng, noise_sd=0.0)
 end
 
 ################################ KERNEL TRAINING FUNCTIONS #################################
-# general process
-# 1. Create object (using deepcopy)
-    # current problem here is that the underlying params of the model are not existing outside scope
-# 2. create parameters object that has the ones you want to opt over
-# 3. create inline function which takes as arguments input/output and doesn't include model vars as input
-# 4. run gradient according to the params on that loss function 
-# 5. update optimizer and param string_format_mean_sd
-# 6. return updated object?
-
 ############ VANILLA GP FUNCTIONS #############
 mutable struct RBF{T} <: KernelFunctions.Kernel
     σ::T  # vector of kernel LS - this is in squared form
@@ -231,7 +222,7 @@ function exp_runs_over_n(ns, n_reps, params, verbose=false)
         print(n, "\n")
         
         # update params
-        params_n = copy(params)
+        params_n = deepcopy(params)
         params_n[:n_train] = n
         
         # run
