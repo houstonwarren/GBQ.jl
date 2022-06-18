@@ -35,10 +35,10 @@ maxes
 
 ####### Error Plot
 poly_1d_sum = full_error_df(poly1d_err, poly1d_err_sd)
-labels = ["QMC","BQ", "GBQ-G w/ RBF", "GBQ-G w/ Matern 3/2"]
+labels = ["QMC","BQ", "GBQ-G RBF", "GBQ-G Matern 3/2"]
 position = [32, 11.5]
 columns = ["qmc", "bq", "sbq_gauss", "sbq_gauss_m32"]
-poly_1d_err_plot = final_err_plot(poly_1d_sum, title, position, labels, columns)
+poly_1d_err_plot = final_err_plot(poly_1d_sum, position, title, labels, columns)
 
 ################## DISJOINT 1D ###################
 dis1d_err_means = CSV.read("experiments/1D/results/disjoint_1d_err_means.csv", DataFrame)
@@ -57,10 +57,10 @@ maxes
 
 ####### Error Plot
 dis_1d_sum = full_error_df(dis1d_err_means, dis1d_err_sd)
-labels = ["QMC","BQ", "GBQ-U w/ Matern 3/2",  "GBQ-G w/ RBF"]
-position = [30, 11]
-columns = ["qmc", "bq", "sbq_gauss", "sbq_uni_m32"]
-dis_1d_err_plot = final_err_plot(dis_1d_sum, title, position, labels, columns)
+labels = ["QMC","BQ", "GBQ-U Matern 3/2",  "GBQ-G RBF"]
+position = [20, 11]
+columns = ["qmc", "bq", "sbq_uni_m32", "sbq_gauss"]
+dis_1d_err_plot = final_err_plot(dis_1d_sum, position, title, labels, columns)
 
 ################################################# COMBINE AND SAVE
 combined_1d = hstack(poly1d_data_plot, poly_1d_err_plot, dis1d_data_plot, dis_1d_err_plot)
@@ -146,7 +146,7 @@ bmc_sum = full_error_df(bmc_err_means, bmc_err_sd, true, true)
 pos = [6, 10]
 labels = ["MC", "BQ w/ RBF", "GBQ-U w/ RBF", "GBQ-G w/ RBF"]
 columns = ["mc", "bq", "gbq_uni", "gbq_gauss"]
-bmc_err_plot = final_err_plot(bmc_sum, "thing", pos, labels, columns, true, true)
+bmc_err_plot = final_err_plot(bmc_sum, position, nothing, labels, columns, true, true)
 
 ####### Table
 bmc_cols = ["mc", "bq", "gbq_uni", "gbq_gauss"]
@@ -160,13 +160,13 @@ dis5d_data = CSV.read("experiments/ND/results/dis5d_data.csv", DataFrame)
 
 ####### Calculate best methods
 maxes = []
-for row in 1:8
+for row in 1:13
     push!(maxes, findmin(dis5d_err_means[row, 3:13]))
 end
 maxes
 
 ####### Table
-d5d_cols = ["mc", "qmc", "bq", "gbq_gauss", "gbq_gauss_m32"]
+d5d_cols = ["mc", "bq", "gbq_gauss", "gbq_gauss_m32"]
 d5d_error_table = error_table(dis5d_err_means, dis5d_err_sd, d5d_cols)
 latexify(d5d_error_table, env=:table)
 

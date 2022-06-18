@@ -25,7 +25,7 @@ function generate_experimental_data(f, n, lb, ub, noise_sd=0.0, rng=nothing)
         else
             y_noisy = y .+ rand(MersenneTwister(rng), Normal(0, noise_sd), n)
         end
-        return X, y, y
+        return X, y, y_noisy
     else
         return X, y, y
     end
@@ -218,6 +218,7 @@ function exp_runs_over_n(ns, n_reps, params, verbose=false)
     n_res_stds = []
     n_res_errs = []
     n_res_errs_σ = []
+    raw_results = []
     for n in ns
         print(n, "\n")
         
@@ -227,7 +228,8 @@ function exp_runs_over_n(ns, n_reps, params, verbose=false)
         
         # run
         n_res = exp_repeated_runs(n_reps, params_n, verbose)
-        
+        raw_n_results = hcat(repeat([n], size(n_res, 1)), n_res)
+
         # values
         n_res_mean = mean(n_res, dims=1)[1, :]
         n_res_std = std(n_res, dims=1)[1, :]
@@ -244,11 +246,13 @@ function exp_runs_over_n(ns, n_reps, params, verbose=false)
         push!(n_res_stds, vcat(n, n_res_std))
         push!(n_res_errs, vcat(n, err_means))
         push!(n_res_errs_σ, vcat(n, err_stds))
+        push!(raw_results, raw_n_results)
 
     end
     n_res_means = Array(hcat(n_res_means...)')
     n_res_stds = Array(hcat(n_res_stds...)')
     n_res_errs = Array(hcat(n_res_errs...)')
     n_res_errs_σ = Array(hcat(n_res_errs_σ...)')
-    return n_res_means, n_res_stds, n_res_errs, n_res_errs_σ
+    raw_results = Array(hcat(raw_results...)')
+    return n_res_means, n_res_stds, n_res_errs, n_res_errs_σ, raw_results
 end

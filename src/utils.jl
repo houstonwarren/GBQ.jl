@@ -168,7 +168,11 @@ function disjoint_1d_func(df, split)
     return p
 end
 
-function final_err_plot(err, title, position, labels=nothing, columns=nothing, logx=false, logy=false)
+function final_err_plot(err, position, 
+        title=nothing, labels=nothing, columns=nothing,
+        logx=false, logy=false
+    )
+    
     if !isnothing(columns)
         err = filter(row -> row.model ∈ columns, err)
     end
@@ -185,30 +189,30 @@ function final_err_plot(err, title, position, labels=nothing, columns=nothing, l
             p = Gadfly.plot(
                 err, x=:n, y=:μ, color=:model,
                 Geom.point, Geom.line, alpha=[0.5],
-                Guide.title(nothing), style(line_width=3mm),
-                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Guide.title(title), style(line_width=3mm),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
                 Guide.colorkey(title="", labels=labels, pos=position),
                 Guide.xlabel(x_label),
                 Guide.ylabel(y_label),
-                Theme(major_label_font="CMU Serif",
-                    minor_label_font="CMU Serif",
-                    key_label_font="CMU Serif",
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                    #key_label_font="Computer Modern",
                     major_label_font_size=8pt,minor_label_font_size=6pt,
-                    key_label_font_size=7.25pt
+                    key_label_font_size=7pt
                 )
             )
         else
             p = Gadfly.plot(
                 err, x=:n, y=:μ, color=:model,
                 Geom.point, Geom.line, alpha=[0.5],
-                Guide.title(nothing), style(line_width=2mm),
+                Guide.title(title), style(line_width=2mm),
                 Guide.colorkey(title="", pos=position),
-                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
                 Guide.xlabel(x_label),
                 Guide.ylabel(y_label),
-                Theme(major_label_font="CMU Serif",
-                    minor_label_font="CMU Serif",
-                    key_label_font="CMU Serif",
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                    #key_label_font="Computer Modern",
                     major_label_font_size=8pt, minor_label_font_size=6pt,
                     key_label_font_size=7.25pt
                 )
@@ -222,13 +226,13 @@ function final_err_plot(err, title, position, labels=nothing, columns=nothing, l
                 err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
                 Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
                 Guide.title(nothing), style(line_width=3mm),
-                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
                 Guide.colorkey(title="", labels=labels, pos=position),
                 Guide.xlabel(x_label),
                 Guide.ylabel(y_label),
-                Theme(major_label_font="CMU Serif",
-                    minor_label_font="CMU Serif",
-                    key_label_font="CMU Serif",
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                    #key_label_font="Computer Modern",
                     major_label_font_size=8pt,minor_label_font_size=6pt,
                     key_label_font_size=7.25pt
                 )
@@ -239,12 +243,12 @@ function final_err_plot(err, title, position, labels=nothing, columns=nothing, l
                 Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
                 Guide.title(nothing), style(line_width=2mm),
                 Guide.colorkey(title="", pos=position),
-                Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "deeppink"),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
                 Guide.xlabel(x_label),
                 Guide.ylabel(y_label),
-                Theme(major_label_font="CMU Serif",
-                    minor_label_font="CMU Serif",
-                    key_label_font="CMU Serif",
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                   # key_label_font="Computer Modern",
                     major_label_font_size=8pt, minor_label_font_size=6pt,
                     key_label_font_size=7.25pt
                 )

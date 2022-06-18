@@ -27,7 +27,7 @@ function trainable_prms(k)
     return k.σ
 end
 
-exp_params = Dict([ 
+exp_params = Dict([
     :n_train => 100,
     :n_fourier_feats => 100,
     :lb => [0.0, 0.0, 0.0, 0.0, 0.0],
@@ -58,7 +58,7 @@ exp_params[:analytical_sol] = analytical
 # res = experiment(;exp_params...)
 runs_per_n = 10
 ns = [10, 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-res_means, res_stds, err_means, err_σ = exp_runs_over_n(ns, runs_per_n, exp_params)
+res_means, res_stds, err_means, err_σ, raw_results = exp_runs_over_n(ns, runs_per_n, exp_params)
 
 ######################################### RESULTS ##########################################
 # results
