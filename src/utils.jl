@@ -53,94 +53,6 @@ function verify_invertible(K::Matrix, tolerance)
     end
 end
 
-####################################### EXPERIMENTS ########################################
-function generate_data(f, n, lb, ub, noise_sd=0.0, rng=nothing)
-    X, y = f(n, lb, ub, rng)
-
-    if noise_sd > 0.0
-        if isnothing(rng)
-            y = y .+ rand(Normal(0, noise_sd), n)
-        else
-            y = y .+ rand(MersenneTwister(rng), Normal(0, noise_sd), n)
-        end
-    end
-
-    return X, y
-end
-
-function partition_data(X, y, n_train, rng, noise_sd=0.0)
-    # full data
-    
-    # train/test data
-    train_pct = n_train / size(X, 1)
-    X_train, X_test = MLJ.partition(X, train_pct, rng=rng, shuffle=true)
-    y_train, y_test = MLJ.partition(y, train_pct, rng=rng, shuffle=true)
-
-    if noise_sd > 0.0
-        y_train = y_train .+ rand(Normal(0, noise_sd), n_train)
-    end
-
-    return X_train, y_train, X_test, y_test
-end
-
-function exp_repeated_runs(n_reps, exp_function, params, verbose=false)
-    rngs = rand(MersenneTwister(params[:rng]), 1:100, n_reps)
-    run_params = copy(params)
-    
-    full_results = []
-    for run in 1:n_reps
-        if verbose
-            print(run, "\n")
-        end
-        run_params[:rng] = rngs[run]
-        results = exp_function(;run_params...)
-        push!(full_results, results)
-    end
-
-    full_results = convert.(Float64, Array(hcat(full_results...)'))
-    return full_results
-end
-
-function exp_runs_over_n(ns, n_reps, exp_function, params, verbose=false)
-    n_res_means = []
-    n_res_stds = []
-    n_res_errs = []
-    n_res_errs_σ = []
-    for n in ns
-        print(n, "\n")
-        
-        # update params
-        params_n = copy(params)
-        params_n[:n_train] = n
-        
-        # run
-        n_res = exp_repeated_runs(n_reps, exp_function, params_n, verbose)
-        
-        # values
-        n_res_mean = mean(n_res, dims=1)[1, :]
-        n_res_std = std(n_res, dims=1)[1, :]
-
-        # errors
-        true_val = n_res[1, 1]
-        preds = n_res[:, 2:size(n_res, 2)]
-        errs = pct_error(true_val, preds)
-        err_means = mean(errs, dims=1)[1, :]
-        err_stds = std(errs, dims=1)[1, :]
-
-        # add to df
-        push!(n_res_means, vcat(n, n_res_mean))
-        push!(n_res_stds, vcat(n, n_res_std))
-        push!(n_res_errs, vcat(n, err_means))
-        push!(n_res_errs_σ, vcat(n, err_stds))
-
-    end
-    n_res_means = Array(hcat(n_res_means...)')
-    n_res_stds = Array(hcat(n_res_stds...)')
-    n_res_errs = Array(hcat(n_res_errs...)')
-    n_res_errs_σ = Array(hcat(n_res_errs_σ...)')
-    return n_res_means, n_res_stds, n_res_errs, n_res_errs_σ
-end
-
 ######################################## EVALUATION ########################################
 function pct_error(true_val, pred)
     return abs((true_val - pred) / true_val) * 100
@@ -148,6 +60,14 @@ end
 
 function pct_error(true_val::Float64, preds::Matrix)
     return abs.((true_val .- preds) ./ true_val) .* 100
+end
+
+function mse(true_val::AbstractVector, preds::AbstractVector)
+    return mean(((true_val .- preds)).^2)
+end
+
+function mae(true_val::AbstractVector, preds::AbstractVector)
+    return mean(abs.((true_val .- preds)))
 end
 
 function error_df(preds, nms)
@@ -162,23 +82,33 @@ function error_df(preds, nms)
     return err_df
 end
 
-function confidence_bounds(err_means, err_sds)
+function confidence_bounds(err_means, err_sds, logy=false)
     n_cols = size(err_means, 2)
     ns = err_means[:, 1]
-    upper_vals = err_means[:, 2:n_cols] .+ err_sds[:, 2:n_cols] .* 1.95
-    lower_vals = err_means[:, 2:n_cols] .- err_sds[:, 2:n_cols] .* 1.95
-    lower_vals = ifelse.(lower_vals .< 0, 0, lower_vals)
-    upper_vals = ifelse.(upper_vals .< 0, 0, upper_vals)
+
+    if logy
+        err_sd_frame = log.(err_sds[:, 2:n_cols])
+        err_mu_frame = log.(err_means[:, 2:n_cols])
+        upper_vals = err_mu_frame .+ err_sd_frame .* 1.95
+        lower_vals = err_mu_frame .- err_sd_frame .* 1.95
+    else
+        err_sd_frame = err_sds[:, 2:n_cols]
+        err_mu_frame = err_means[:, 2:n_cols]
+        upper_vals = err_mu_frame .+ err_sd_frame .* 1.95
+        lower_vals = err_mu_frame .- err_sd_frame .* 1.95
+        lower_vals = ifelse.(lower_vals .< 0, 0, lower_vals)
+        upper_vals = ifelse.(upper_vals .< 0, 0, upper_vals)
+    end
+
     lower_vals = hcat(ns, lower_vals)
     upper_vals = hcat(ns, upper_vals)
-
     rename!(lower_vals, :x1 => "n")
     rename!(upper_vals, :x1 => "n")
     return lower_vals, upper_vals
 end
 
-function full_error_df(err_means, err_sds)
-    lower_errs, upper_errs = confidence_bounds(err_means, err_sds)
+function full_error_df(err_means, err_sds, logx=false, logy=false)
+    lower_errs, upper_errs = confidence_bounds(err_means, err_sds, logy)
     
     # reshape and rename
     err_means = stack(err_means, 2:13)
@@ -191,6 +121,12 @@ function full_error_df(err_means, err_sds)
     # join
     errs = innerjoin(err_means, lower_errs, on =[:n, :model])
     errs = innerjoin(errs, upper_errs, on =[:n, :model])
+    if logx
+        errs[!, :n] = log.(errs[!, :n])
+    end
+    if logy
+        errs[!, :μ] = log.(errs[!, :μ])
+    end
     return errs
 end
 
@@ -232,43 +168,92 @@ function disjoint_1d_func(df, split)
     return p
 end
 
-function final_err_plot(err, title, position, labels=nothing, columns=nothing)
+function final_err_plot(err, position, 
+        title=nothing, labels=nothing, columns=nothing,
+        logx=false, logy=false
+    )
+    
     if !isnothing(columns)
         err = filter(row -> row.model ∈ columns, err)
     end
 
-    if !isnothing(labels)
-        p = Gadfly.plot(
-            err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
-            Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
-            Guide.title(nothing), style(line_width=3mm),
-            Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "sienna2"),
-            Guide.colorkey(title="", labels=labels, pos=position),
-            Guide.xlabel("N Training Data"),
-            Guide.ylabel("% Error vs. Analytical"),
-            Theme(major_label_font="CMU Serif",
-                minor_label_font="CMU Serif",
-                key_label_font="CMU Serif",
-                major_label_font_size=8pt,minor_label_font_size=6pt,
-                key_label_font_size=7.25pt
-            )
-        )
+    if logx
+        x_label = "N Training Data (log)"
     else
-        p = Gadfly.plot(
-            err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
-            Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
-            Guide.title(nothing), style(line_width=2mm),
-            Guide.colorkey(title="", pos=position),
-            Scale.color_discrete_manual("brown2", "deepskyblue1", "springgreen", "sienna2"),
-            Guide.xlabel("N Training Data"),
-            Guide.ylabel("% Error vs. Analytical"),
-            Theme(major_label_font="CMU Serif",
-                minor_label_font="CMU Serif",
-                key_label_font="CMU Serif",
-                major_label_font_size=8pt, minor_label_font_size=6pt,
-                key_label_font_size=7.25pt
+        x_label = "N Training Data"
+    end
+
+    if logy
+        y_label = "Mean % Error vs. Analytical (log)"
+        if !isnothing(labels)
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model,
+                Geom.point, Geom.line, alpha=[0.5],
+                Guide.title(title), style(line_width=3mm),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
+                Guide.colorkey(title="", labels=labels, pos=position),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                    #key_label_font="Computer Modern",
+                    major_label_font_size=8pt,minor_label_font_size=6pt,
+                    key_label_font_size=7pt
+                )
             )
-        )
+        else
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model,
+                Geom.point, Geom.line, alpha=[0.5],
+                Guide.title(title), style(line_width=2mm),
+                Guide.colorkey(title="", pos=position),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                    #key_label_font="Computer Modern",
+                    major_label_font_size=8pt, minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
+            )
+        end
+    
+    else
+        y_label = "Mean % Error vs. Analytical"
+        if !isnothing(labels)
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
+                Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
+                Guide.title(nothing), style(line_width=3mm),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
+                Guide.colorkey(title="", labels=labels, pos=position),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                    #key_label_font="Computer Modern",
+                    major_label_font_size=8pt,minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
+            )
+        else
+            p = Gadfly.plot(
+                err, x=:n, y=:μ, color=:model, ymin=:lb, ymax=:ub,
+                Geom.point, Geom.line, Geom.ribbon, alpha=[0.5],
+                Guide.title(nothing), style(line_width=2mm),
+                Guide.colorkey(title="", pos=position),
+                Scale.color_discrete_manual("red1", "deepskyblue1", "springgreen", "maroon1"),
+                Guide.xlabel(x_label),
+                Guide.ylabel(y_label),
+                Theme(#major_label_font="Computer Modern",
+                    #minor_label_font="Computer Modern",
+                   # key_label_font="Computer Modern",
+                    major_label_font_size=8pt, minor_label_font_size=6pt,
+                    key_label_font_size=7.25pt
+                )
+            )
+        end
     end
     return p
 end
