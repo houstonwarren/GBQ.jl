@@ -89,4 +89,9 @@ CSV.write("experiments/ND/results/dis5d_means.csv", mean_df)
 CSV.write("experiments/ND/results/dis5d_stds.csv", std_df)
 CSV.write("experiments/ND/results/dis5d_err_means.csv", err_df)
 CSV.write("experiments/ND/results/dis5d_err_stds.csv", err_σ_df)
-CSV.write("experiments/ND/results/dis5d_data.csv", DataFrame(data', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"]))
+CSV.write("experiments/ND/results/dis5d_data.csv", 
+    DataFrame(data', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"])
+)
+CSV.write("experiments/ND/results/dis5d_raw.csv", 
+    DataFrame(data', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"])
+)

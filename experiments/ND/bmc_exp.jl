@@ -5,7 +5,7 @@ using Quadrature, Cubature
 using Plots
 using IterTools
 using SymPy
-using DataFrames 
+using DataFrames
 using CSV
 
 ########################################## SETUP ###########################################
@@ -42,7 +42,6 @@ exp_params = Dict([
     :rng => global_rng,
 ])
 
-
 ###################################### GENERATE DATA #######################################
 _X, _y, _y_noisy = generate_experimental_data(bmc_func, n_full_data, exp_params[:lb], exp_params[:ub], 0.0,  global_rng)
 data = vcat(_X, _y', _y_noisy')
@@ -55,7 +54,7 @@ exp_params[:analytical_sol] = analytical
 # res = experiment(;exp_params...)
 runs_per_n = 10
 ns = [10, 25, 50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-res_means, res_stds, err_means, err_σ = exp_runs_over_n(ns, runs_per_n, exp_params)
+res_means, res_stds, err_means, err_σ, raw_results = exp_runs_over_n(ns, runs_per_n, exp_params)
 
 ######################################### RESULTS ##########################################
 # results
@@ -74,11 +73,8 @@ err_nms = [
 err_df = DataFrame(err_means, err_nms)
 err_σ_df = DataFrame(err_σ, err_nms)
 
-# # plot
-# # plot
-# plot_labels = [
-#     "quad" "mc" "qmc" "bq" "gbq_uni" "gbq_uni_m12" "gbq_uni_m32" "gbq_uni_m52" "gbq_gauss" "gbq_gauss_m12" "gbq_gauss_m32" "gbq_gauss_m52"
-# ]
+# raw results
+# raw_preds_df = DataFrame(raw_results, nms)
 
 # # save
 # save_results(mean_df, std_df, err_df, runs_per_n, "experiments/ND/bmc_exp.hdf5")
@@ -87,3 +83,4 @@ CSV.write("experiments/ND/results/bmc_exp_stds.csv", std_df)
 CSV.write("experiments/ND/results/bmc_exp_err_means.csv", err_df)
 CSV.write("experiments/ND/results/bmc_exp_err_stds.csv", err_σ_df)
 CSV.write("experiments/ND/results/bmc_exp_data.csv", DataFrame(data', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"]))
+CSV.write("experiments/ND/results/bmc_raw_preds.csv", DataFrame(raw_results, :auto))

@@ -70,9 +70,3 @@ end
 
 KernelFunctions.kernelmatrix(k::RandomFeatureKernel, x1::ColVecs) = rff_kernel(vec_of_obs_to_mat(x1), vec_of_obs_to_mat(x1), k.ω, k.β, k.σ, k.λ, k.sin_feats)
 KernelFunctions.kernelmatrix(k::RandomFeatureKernel, x1::ColVecs, x2::ColVecs) = rff_kernel(vec_of_obs_to_mat(x1), vec_of_obs_to_mat(x2), k.ω, k.β, k.σ, k.λ, k.sin_feats)
-
-############## TEMPORARY GPU FIX
-# function Statistics.mean(f, x::AbstractVector)
-#     fdataα_d = f.data.α |> gpu
-#     return mean(f.prior, x) + cov(f.prior, x, f.data.x) * fdataα_d
-# end
