@@ -1,5 +1,5 @@
 # GBQ.jl
-Generalized Bayesian Quadrature Using Spectral Kernels
+Paper code for Generalized Bayesian Quadrature Using Spectral Kernels, published at UAI 2022 by Houston Warren, Rafael Oliveira, and Fabio Ramos.
 
 ## Instructions
 
