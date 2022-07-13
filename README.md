@@ -13,7 +13,9 @@ After making sure the project dependencies in `Project.toml` are installed, the 
 5. Run all code in `rff.jl`
 6. Run all code in `baselines.jl`
 7. Run all code in `generalizedbq.jl`
-8. Run all code of chosen experiment in `experiments` directory.
+8. Run all code in `train.jl`
+9. Run all code of chosen experiment in `experiments` directory.
+
+Note: certain experiments in the camera-ready paper are run under different package iterations, which can affect the random seeds. To appropriately reproduce results, find the associated CSV of results in the `results/` folder for the experiment dimensionality (ie. 1D, 2D, ND), rewind to the commit when the CSV of results was last changed, and then run the experimental code.
 
 To produce figures and tables used in the paper from generated data, you can run `plots.jl`.
-- Note: certain experiments in the camera-ready paper are run under different package iterations, which can affect the random seeds. To appropriately reproduce results, find the associated CSV of results in the `results/` folder for the experiment dimensionality (ie. 1D, 2D, ND), rewind to the commit when the CSV of results was last changed, and then run the experimental code.
