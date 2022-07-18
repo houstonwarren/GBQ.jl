@@ -1,4 +1,4 @@
-   using Distributions
+using Distributions
 using Quadrature
 
 ###################################### KME BASELINES #######################################

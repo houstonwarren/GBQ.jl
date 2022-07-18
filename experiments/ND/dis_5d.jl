@@ -4,7 +4,6 @@ using Random
 using Quadrature, Cubature
 using Plots
 using IterTools
-using SymPy
 using DataFrames 
 using CSV
 

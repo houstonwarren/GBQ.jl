@@ -166,7 +166,7 @@ end
 maxes
 
 ####### Table
-d5d_cols = ["mc", "bq", "gbq_gauss", "gbq_gauss_m32"]
+d5d_cols = ["mc", "bq", "gbq_uni", "gbq_uni_m52", "gbq_gauss", "gbq_gauss_m32"]
 d5d_error_table = error_table(dis5d_err_means, dis5d_err_sd, d5d_cols)
 latexify(d5d_error_table, env=:table)
 
