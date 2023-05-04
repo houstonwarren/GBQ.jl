@@ -4,7 +4,6 @@ using Random
 using Quadrature, Cubature
 using Plots
 using IterTools
-using SymPy
 using DataFrames 
 using CSV
 
@@ -39,7 +38,7 @@ exp_params = Dict([
     :μₓ => [0.5, 0.5],
     :Σₓ => [0.5, 0.5],  # covariance, not sd
     :trainable_params_func => trainable_prms,
-    :true_func => p2d,
+    :true_func => disjoint_poly_2d,
     :opt_params => Dict([]),
     :opt_steps => 1000,
     :rng => global_rng,
@@ -54,16 +53,16 @@ data = vcat(_X, _y', _y_noisy')
 surface(0:0.01:1, 0:0.01:1, disjoint_poly_2d)
 
 # quadrature solution
-quad_sol = quadrature(disjoint_poly_2d, exp_params[:lb], exp_params[:ub] ./ 2)  # 5.00
+analytical = quadrature(disjoint_poly_2d, exp_params[:lb], exp_params[:ub] ./ 2)  # 5.00
 
 # analytical solution
-@syms x_ana, y_ana
-expr = exp(5x_ana + 5y_ana)
-analytical = integrate(
-    expr, 
-    (x_ana, exp_params[:lb][1], exp_params[:ub][1] / 2),
-    (y_ana, exp_params[:lb][2], exp_params[:ub][2] / 2)
-)  # 5.00
+# @syms x_ana, y_ana
+# expr = exp(5x_ana + 5y_ana)
+# analytical = integrate(
+#     expr, 
+#     (x_ana, exp_params[:lb][1], exp_params[:ub][1] / 2),
+#     (y_ana, exp_params[:lb][2], exp_params[:ub][2] / 2)
+# )  # 5.00
 exp_params[:analytical_sol] = analytical
 
 ######################################## EXPERIMENT ########################################

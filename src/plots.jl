@@ -118,13 +118,13 @@ columns = ["qmc", "sbq_uni_m32", "sbq_gauss", "sbq_gauss_m52"]
 poly_2d_err_plot = final_err_plot(poly_2d_sum, pos,labels, columns)
 
 maxes = []
-for row in 1:8
-    push!(maxes, findmin(dis2d_err_means[row, 4:13]))
+for row in 1:13
+    push!(maxes, findmin(dis2d_err_means[row, 3:13]))
 end
 maxes
 
 # should go n | model | val |
-d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_gauss"]
+d2d_cols = ["qmc", "bq", "sbq_uni", "sbq_uni_m12", "sbq_uni_m32", "sbq_uni_m52", "sbq_gauss"]
 d2d_error_table = error_table(dis2d_err_means, dis2d_err_sd, d2d_cols)
 latexify(d2d_error_table, env=:table)
 

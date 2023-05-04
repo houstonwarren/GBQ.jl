@@ -92,5 +92,5 @@ CSV.write("experiments/ND/results/dis5d_data.csv",
     DataFrame(data', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"])
 )
 CSV.write("experiments/ND/results/dis5d_raw.csv", 
-    DataFrame(data', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"])
+    DataFrame(raw_results', ["x1", "x2", "x3", "x4", "x5", "y", "y_noisy"])
 )
